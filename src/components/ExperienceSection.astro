@@ -177,7 +177,7 @@ const experiences = [
     display: flex;
     align-items: center;
     justify-content: center;
-    opacity: 0;
+    opacity: 1;
     transform: scale(0.8);
     transition: all 0.3s ease;
   }
@@ -186,15 +186,16 @@ const experiences = [
     width: 50px;
     height: 50px;
     object-fit: contain;
+    filter: grayscale(100%);
+    transition: filter 0.3s ease;
   }
 
   .experience-card:hover .experience-logo {
-    opacity: 1;
     transform: scale(1);
   }
 
-  .experience-card:hover .experience-logo-placeholder {
-    background-color: var(--card-color, #4f46e5);
+  .experience-card:hover .experience-logo img {
+    filter: grayscale(0%);
   }
 
   .experience-content {
@@ -301,11 +302,18 @@ const experiences = [
       // Enhance hover effect with GSAP
       card.addEventListener("mouseenter", () => {
         gsap.to(logo, {
-          opacity: 1,
           scale: 1,
           duration: 0.3,
           ease: "back.out(1.5)",
         });
+
+        const logoImg = logo.querySelector("img");
+        if (logoImg) {
+          gsap.to(logoImg, {
+            filter: "grayscale(0%)",
+            duration: 0.3,
+          });
+        }
 
         gsap.to(placeholder, {
           backgroundColor:
@@ -318,10 +326,17 @@ const experiences = [
 
       card.addEventListener("mouseleave", () => {
         gsap.to(logo, {
-          opacity: 0,
           scale: 0.8,
           duration: 0.3,
         });
+
+        const logoImg = logo.querySelector("img");
+        if (logoImg) {
+          gsap.to(logoImg, {
+            filter: "grayscale(100%)",
+            duration: 0.3,
+          });
+        }
 
         gsap.to(placeholder, {
           backgroundColor: "#f5f5f5",
