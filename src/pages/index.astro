@@ -1,11 +1,53 @@
 ---
-import Welcome from '../components/Welcome.astro';
-import Layout from '../layouts/Layout.astro';
+import Layout from "../layouts/Layout.astro";
+import HeroSection from "../components/HeroSection.astro";
+import ProjectsSection from "../components/ProjectsSection.astro";
+import ExperienceSection from "../components/ExperienceSection.astro";
+import FooterSection from "../components/FooterSection.astro";
 
 // Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
 // Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
 ---
 
 <Layout>
-	<Welcome />
+  <main>
+    <HeroSection />
+    <ProjectsSection />
+    <ExperienceSection />
+    <FooterSection />
+  </main>
 </Layout>
+
+<style>
+  main {
+    position: relative;
+    width: 100%;
+  }
+</style>
+
+<script>
+  import { gsap } from "gsap";
+  import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+  gsap.registerPlugin(ScrollTrigger);
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const projectsSection = document.querySelector(".projects-section");
+
+    if (!projectsSection) return;
+
+    // Simple animation for projects section when scrolled to
+    ScrollTrigger.create({
+      trigger: projectsSection,
+      start: "top 80%",
+      onEnter: () => {
+        gsap.to(projectsSection, {
+          opacity: 1,
+          y: 0,
+          duration: 0.8,
+          ease: "power2.out",
+        });
+      },
+    });
+  });
+</script>

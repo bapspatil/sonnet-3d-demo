@@ -1,0 +1,531 @@
+<section class="hero-section">
+  <div class="container">
+    <div class="hero-content">
+      <h1 class="hero-title">
+        Creative <br /> Developer <span>&</span>
+        <br /> Designer
+      </h1>
+      <p class="hero-subtitle">
+        Building immersive digital experiences with modern web technologies
+      </p>
+      <div class="hero-cta">
+        <a href="#projects" class="btn primary-btn">View Projects</a>
+        <a href="#contact" class="btn secondary-btn">Get in Touch</a>
+      </div>
+    </div>
+  </div>
+  <div id="hero-canvas-container"></div>
+</section>
+
+<style>
+  .hero-section {
+    position: relative;
+    display: flex;
+    align-items: center;
+    height: 100vh;
+    color: white;
+    z-index: 1;
+    overflow: visible;
+  }
+
+  .hero-content {
+    position: relative;
+    z-index: 10;
+    max-width: 700px;
+    margin-top: -5%;
+  }
+
+  .hero-title {
+    font-size: clamp(3rem, 8vw, 5.5rem);
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 1.5rem;
+    letter-spacing: -0.02em;
+  }
+
+  .hero-title span {
+    color: var(--accent-color);
+  }
+
+  .hero-subtitle {
+    font-size: clamp(1.1rem, 2vw, 1.4rem);
+    margin-bottom: 3rem;
+    opacity: 0.9;
+    max-width: 500px;
+  }
+
+  .hero-cta {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .primary-btn {
+    background-color: var(--accent-color);
+    color: white;
+  }
+
+  .secondary-btn {
+    background-color: transparent;
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+  }
+
+  .secondary-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+
+  #hero-canvas-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    background-color: var(--primary-color);
+    pointer-events: auto;
+  }
+
+  @media (max-width: 768px) {
+    .hero-content {
+      padding: 0 1rem;
+    }
+
+    .hero-cta {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .hero-cta .btn {
+      width: 100%;
+      text-align: center;
+    }
+  }
+</style>
+
+<script>
+  import * as THREE from "three";
+
+  class ClothSimulation {
+    container: HTMLElement;
+    width: number;
+    height: number;
+    clock: THREE.Clock;
+    scene!: THREE.Scene;
+    camera!: THREE.PerspectiveCamera;
+    renderer!: THREE.WebGLRenderer;
+    cloth!: THREE.Points;
+    pointsMaterial!: THREE.PointsMaterial;
+    originalPositions!: Array<number>;
+    positions!: Float32Array;
+    mouse!: THREE.Vector2;
+    dotSize: number;
+    // New spark system properties
+    sparkParticles!: THREE.Points;
+    sparkGeometry!: THREE.BufferGeometry;
+    sparkMaterial!: THREE.PointsMaterial;
+    sparkPositions!: Float32Array;
+    sparkVelocities: Array<THREE.Vector3> = [];
+    sparkLifetimes: Array<number> = [];
+    isHovering: boolean = false;
+    mousePosition: THREE.Vector2 = new THREE.Vector2();
+
+    constructor(container: HTMLElement) {
+      this.container = container;
+      this.width = this.container.clientWidth;
+      this.height = this.container.clientHeight;
+      this.clock = new THREE.Clock();
+      this.dotSize = window.innerWidth < 768 ? 2 : 3; // Adjust dot size based on screen size
+
+      this.init();
+      this.createCloth();
+      this.createSparkSystem();
+      this.addEvents();
+      this.animate();
+    }
+
+    init() {
+      // Set up scene
+      this.scene = new THREE.Scene();
+
+      // Set up camera
+      this.camera = new THREE.PerspectiveCamera(
+        70,
+        this.width / this.height,
+        0.1,
+        10000
+      );
+      this.camera.position.set(0, 0, 1000);
+
+      // Set up renderer
+      this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      this.renderer.setSize(this.width, this.height);
+      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      this.renderer.setClearColor(0x1e1e1e, 1);
+      this.container.appendChild(this.renderer.domElement);
+
+      // Add lights
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+      this.scene.add(ambientLight);
+
+      const pointLight = new THREE.PointLight(0x4f46e5, 1);
+      pointLight.position.set(200, 300, 400);
+      this.scene.add(pointLight);
+
+      const pointLight2 = new THREE.PointLight(0xffffff, 0.5);
+      pointLight2.position.set(-200, -300, 200);
+      this.scene.add(pointLight2);
+    }
+
+    createCloth() {
+      // Create dots grid for cloth
+      const segments = window.innerWidth < 768 ? 50 : 100;
+      const geometry = new THREE.PlaneGeometry(
+        this.width * 1.5,
+        this.height * 1.5,
+        segments,
+        segments
+      );
+
+      // Use Points instead of Mesh for dotted effect
+      this.pointsMaterial = new THREE.PointsMaterial({
+        color: 0x4f46e5,
+        size: this.dotSize,
+        sizeAttenuation: true,
+        transparent: true,
+        opacity: 0.8,
+      });
+
+      // Create a texture for the dots
+      const dotTexture = this.createCircleTexture();
+      this.pointsMaterial.map = dotTexture;
+      this.pointsMaterial.alphaMap = dotTexture;
+      this.pointsMaterial.alphaTest = 0.5;
+
+      // Create points instead of mesh
+      this.cloth = new THREE.Points(geometry, this.pointsMaterial);
+      this.scene.add(this.cloth);
+
+      // Store original positions for animation
+      const posArray = geometry.attributes.position.array;
+      this.originalPositions = Array.from(posArray);
+      this.positions = posArray as Float32Array;
+
+      // Set cloth position
+      this.cloth.position.z = -100;
+      this.cloth.rotation.x = Math.PI * 0.1;
+    }
+
+    // Create a circular texture for the dots
+    createCircleTexture() {
+      const canvas = document.createElement("canvas");
+      const size = 128;
+      canvas.width = size;
+      canvas.height = size;
+
+      const context = canvas.getContext("2d");
+      if (!context) return new THREE.Texture();
+
+      context.beginPath();
+      context.arc(size / 2, size / 2, size / 2, 0, 2 * Math.PI);
+      context.fillStyle = "white";
+      context.fill();
+
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.needsUpdate = true;
+      return texture;
+    }
+
+    // Create spark particle system
+    createSparkSystem() {
+      // Create geometry for spark particles
+      const particleCount = 150; // Increased from 100
+      this.sparkGeometry = new THREE.BufferGeometry();
+      this.sparkPositions = new Float32Array(particleCount * 3);
+
+      // Initialize all positions off-screen
+      for (let i = 0; i < particleCount * 3; i += 3) {
+        this.sparkPositions[i] = 0;
+        this.sparkPositions[i + 1] = 0;
+        this.sparkPositions[i + 2] = -1000; // Off screen
+
+        // Initialize velocities and lifetimes
+        this.sparkVelocities.push(new THREE.Vector3(0, 0, 0));
+        this.sparkLifetimes.push(0);
+      }
+
+      // Create buffer attribute for positions
+      this.sparkGeometry.setAttribute(
+        "position",
+        new THREE.BufferAttribute(this.sparkPositions, 3)
+      );
+
+      // Create point material with a glowing effect
+      const sparkTexture = this.createSparkTexture();
+      this.sparkMaterial = new THREE.PointsMaterial({
+        size: 15, // Increased from 8 for better visibility
+        map: sparkTexture,
+        blending: THREE.AdditiveBlending,
+        transparent: true,
+        depthWrite: false,
+        vertexColors: true,
+      });
+
+      // Create color attribute for particles
+      const colors = new Float32Array(particleCount * 3);
+      const baseColor = new THREE.Color(0xffd700); // Changed to yellow/gold
+
+      for (let i = 0; i < particleCount * 3; i += 3) {
+        colors[i] = baseColor.r;
+        colors[i + 1] = baseColor.g;
+        colors[i + 2] = baseColor.b;
+      }
+
+      this.sparkGeometry.setAttribute(
+        "color",
+        new THREE.BufferAttribute(colors, 3)
+      );
+
+      // Create the point system
+      this.sparkParticles = new THREE.Points(
+        this.sparkGeometry,
+        this.sparkMaterial
+      );
+      // Set z position to ensure particles are in front
+      this.sparkParticles.position.z = 50;
+      this.scene.add(this.sparkParticles);
+    }
+
+    // Create a glow texture for sparks
+    createSparkTexture() {
+      const canvas = document.createElement("canvas");
+      const size = 64;
+      canvas.width = size;
+      canvas.height = size;
+
+      const context = canvas.getContext("2d");
+      if (!context) return new THREE.Texture();
+
+      // Create radial gradient for a glow effect
+      const gradient = context.createRadialGradient(
+        size / 2,
+        size / 2,
+        0,
+        size / 2,
+        size / 2,
+        size / 2
+      );
+
+      gradient.addColorStop(0, "rgba(255, 255, 220, 1)"); // Bright white-yellow center
+      gradient.addColorStop(0.3, "rgba(255, 215, 0, 0.8)"); // Gold
+      gradient.addColorStop(1, "rgba(255, 140, 0, 0)"); // Fade to transparent orange
+
+      context.fillStyle = gradient;
+      context.fillRect(0, 0, size, size);
+
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.needsUpdate = true;
+      return texture;
+    }
+
+    // Emit new sparks at the cursor position
+    emitSparks(x: number, y: number) {
+      if (!this.isHovering) return;
+
+      // Convert screen position to normalized device coordinates
+      const ndcX = (x / this.width) * 2 - 1;
+      const ndcY = -(y / this.height) * 2 + 1;
+
+      // Convert to world position
+      const vector = new THREE.Vector3(ndcX, ndcY, 0.5);
+      vector.unproject(this.camera);
+      const dir = vector.sub(this.camera.position).normalize();
+      const distance = -this.camera.position.z / dir.z;
+      const pos = this.camera.position
+        .clone()
+        .add(dir.multiplyScalar(distance));
+
+      // Emit more particles per frame when hovering
+      let emittedCount = 0;
+      const maxEmitPerFrame = 10; // Increased from 5 (implied by i > 15)
+
+      for (let i = 0; i < this.sparkPositions.length; i += 3) {
+        if (this.sparkLifetimes[i / 3] <= 0) {
+          // Position at cursor with slight random offset for more natural look
+          const offset = Math.random() * 10 - 5;
+          this.sparkPositions[i] = pos.x + offset;
+          this.sparkPositions[i + 1] = pos.y + offset;
+          this.sparkPositions[i + 2] = pos.z;
+
+          // Random velocity with more dramatic variation
+          const angle = Math.random() * Math.PI * 2;
+          const speed = 1 + Math.random() * 5; // Increased maximum speed
+          this.sparkVelocities[i / 3].set(
+            Math.cos(angle) * speed,
+            Math.sin(angle) * speed * 1.5, // More upward bias
+            (Math.random() - 0.5) * 3
+          );
+
+          // Varied lifetimes
+          this.sparkLifetimes[i / 3] = 0.5 + Math.random() * 1.5; // Longer max lifetime
+
+          // Random size variation - modify the material size for some particles
+          if (i % 9 === 0) {
+            // Every 3rd particle is larger for more visual interest
+            const sizes = this.sparkMaterial.size as number;
+            const sizeAttr = new Float32Array(this.sparkPositions.length / 3);
+            for (let j = 0; j < sizeAttr.length; j++) {
+              // Random sizes between 10 and 20
+              sizeAttr[j] = Math.random() * 10 + 10;
+            }
+
+            // If size attribute doesn't exist yet, create it
+            if (!this.sparkGeometry.attributes.size) {
+              this.sparkGeometry.setAttribute(
+                "size",
+                new THREE.BufferAttribute(sizeAttr, 1)
+              );
+            }
+          }
+
+          emittedCount++;
+          if (emittedCount >= maxEmitPerFrame) break;
+        }
+      }
+
+      // Update the geometry
+      this.sparkGeometry.attributes.position.needsUpdate = true;
+      if (this.sparkGeometry.attributes.size) {
+        this.sparkGeometry.attributes.size.needsUpdate = true;
+      }
+    }
+
+    // Update spark positions and lifetimes
+    updateSparks(deltaTime: number) {
+      const colorAttribute = this.sparkGeometry.attributes
+        .color as THREE.BufferAttribute;
+
+      for (let i = 0; i < this.sparkPositions.length; i += 3) {
+        const index = i / 3;
+
+        if (this.sparkLifetimes[index] > 0) {
+          // Update position based on velocity
+          this.sparkPositions[i] += this.sparkVelocities[index].x;
+          this.sparkPositions[i + 1] += this.sparkVelocities[index].y;
+          this.sparkPositions[i + 2] += this.sparkVelocities[index].z;
+
+          // Apply "gravity" effect
+          this.sparkVelocities[index].y -= 0.05;
+
+          // Reduce lifetime
+          this.sparkLifetimes[index] -= deltaTime;
+
+          // Fade out based on lifetime
+          const alpha = this.sparkLifetimes[index];
+          // Yellow to orange/red transition as particles fade
+          colorAttribute.array[i] = 1.0; // Red stays at maximum
+          colorAttribute.array[i + 1] = 0.84 * alpha; // Green fades out (yellow to orange/red)
+          colorAttribute.array[i + 2] = 0.0; // No blue for yellow/orange/red colors
+        } else {
+          // Hide expired particles
+          this.sparkPositions[i + 2] = -1000;
+        }
+      }
+
+      // Update buffers
+      this.sparkGeometry.attributes.position.needsUpdate = true;
+      colorAttribute.needsUpdate = true;
+    }
+
+    addEvents() {
+      window.addEventListener("resize", this.onResize.bind(this));
+
+      // Mouse interaction for cloth
+      this.mouse = new THREE.Vector2();
+      window.addEventListener("mousemove", (e) => {
+        this.mouse.x = (e.clientX / this.width) * 2 - 1;
+        this.mouse.y = -(e.clientY / this.height) * 2 + 1;
+
+        this.cloth.rotation.y = this.mouse.x * 0.1;
+        this.cloth.rotation.x = Math.PI * 0.1 + this.mouse.y * 0.1;
+
+        // Store current mouse position for spark emission
+        this.mousePosition.x = e.clientX;
+        this.mousePosition.y = e.clientY;
+      });
+
+      // Add hover detection
+      this.container.addEventListener("mouseenter", () => {
+        this.isHovering = true;
+      });
+
+      this.container.addEventListener("mouseleave", () => {
+        this.isHovering = false;
+      });
+    }
+
+    onResize() {
+      this.width = this.container.clientWidth;
+      this.height = this.container.clientHeight;
+
+      this.camera.aspect = this.width / this.height;
+      this.camera.updateProjectionMatrix();
+
+      this.renderer.setSize(this.width, this.height);
+
+      // Update dot size on resize
+      this.dotSize = window.innerWidth < 768 ? 2 : 3;
+      if (this.pointsMaterial) {
+        this.pointsMaterial.size = this.dotSize;
+      }
+    }
+
+    animate() {
+      const segments = window.innerWidth < 768 ? 50 : 100;
+
+      const render = () => {
+        requestAnimationFrame(render);
+
+        const time = this.clock.getElapsedTime();
+        const deltaTime = this.clock.getDelta();
+
+        // Animate cloth with wave patterns
+        for (let i = 0; i < this.positions.length; i += 3) {
+          const ix = (i / 3) % (segments + 1);
+          const iy = Math.floor(i / 3 / (segments + 1));
+
+          // Create more complex wave patterns
+          const xOffset = Math.sin(ix * 0.1 + time) * 20;
+          const yOffset = Math.cos(iy * 0.1 + time) * 20;
+          const zOffset = Math.sin(ix * 0.1 + iy * 0.1 + time) * 50;
+
+          this.positions[i] = this.originalPositions[i] + xOffset;
+          this.positions[i + 1] = this.originalPositions[i + 1] + yOffset;
+          this.positions[i + 2] = this.originalPositions[i + 2] + zOffset;
+        }
+
+        // Update geometry
+        this.cloth.geometry.attributes.position.needsUpdate = true;
+
+        // Slowly rotate cloth
+        this.cloth.rotation.z += 0.001;
+
+        // Handle spark effects
+        this.emitSparks(this.mousePosition.x, this.mousePosition.y);
+        this.updateSparks(deltaTime);
+
+        this.renderer.render(this.scene, this.camera);
+      };
+
+      render();
+    }
+  }
+
+  // Initialize cloth simulation when page loads
+  document.addEventListener("DOMContentLoaded", () => {
+    const container = document.getElementById("hero-canvas-container");
+    if (container) {
+      new ClothSimulation(container);
+    }
+  });
+</script>

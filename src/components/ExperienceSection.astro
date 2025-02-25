@@ -1,0 +1,331 @@
+---
+// Experience data
+const experiences = [
+  {
+    id: 1,
+    company: "TechGiant Inc.",
+    role: "Senior Frontend Developer",
+    period: "2022 - Present",
+    description:
+      "Led the development of a high-traffic e-commerce platform using React and TypeScript. Implemented performance optimizations resulting in 40% faster page load times.",
+    logo: "/companies/company1.svg",
+    color: "#4f46e5",
+  },
+  {
+    id: 2,
+    company: "InnovateLabs",
+    role: "Frontend Engineer",
+    period: "2020 - 2022",
+    description:
+      "Developed responsive web applications and interactive UIs using Vue.js. Collaborated with UX designers to implement modern interface patterns and animations.",
+    logo: "/companies/company2.svg",
+    color: "#0ea5e9",
+  },
+  {
+    id: 3,
+    company: "CreativeStudio",
+    role: "UI/UX Developer",
+    period: "2018 - 2020",
+    description:
+      "Created immersive web experiences and interactive websites for clients in various industries. Specialized in animation and micro-interactions using GSAP.",
+    logo: "/companies/company3.svg",
+    color: "#16a34a",
+  },
+  {
+    id: 4,
+    company: "DigitalWorks Agency",
+    role: "Web Developer",
+    period: "2016 - 2018",
+    description:
+      "Designed and built client websites and web applications. Managed projects from concept to deployment, with a focus on responsive design and cross-browser compatibility.",
+    logo: "/companies/company4.svg",
+    color: "#dc2626",
+  },
+  {
+    id: 5,
+    company: "StartupVision",
+    role: "Junior Developer",
+    period: "2015 - 2016",
+    description:
+      "Assisted in the development of web and mobile applications. Gained experience in modern JavaScript frameworks and responsive design principles.",
+    logo: "/companies/company5.svg",
+    color: "#fb923c",
+  },
+];
+---
+
+<section id="experience" class="experience-section">
+  <div class="experience-container">
+    <div class="section-header sticky-header">
+      <h2>Work Experience</h2>
+      <p>My professional journey and the companies I've worked with</p>
+    </div>
+
+    <div class="experience-timeline">
+      {
+        experiences.map((exp) => (
+          <div class="experience-card" data-id={exp.id}>
+            <div
+              class="experience-logo-container"
+              style={`--card-color: ${exp.color}`}
+            >
+              <div class="experience-logo-placeholder" />
+              <div class="experience-logo">
+                <img src={exp.logo} alt={`${exp.company} logo`} />
+              </div>
+            </div>
+            <div class="experience-content">
+              <div class="experience-header">
+                <h3>{exp.company}</h3>
+                <span class="experience-period">{exp.period}</span>
+              </div>
+              <div class="experience-role">{exp.role}</div>
+              <p class="experience-description">{exp.description}</p>
+            </div>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+</section>
+
+<style>
+  .experience-section {
+    background-color: var(--background-color);
+    position: relative;
+    min-height: 100vh;
+    padding: 5rem 0;
+  }
+
+  .experience-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 2rem;
+  }
+
+  .sticky-header {
+    position: sticky;
+    top: 2rem;
+    z-index: 10;
+    padding: 2rem;
+    background-color: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+    border-radius: 10px;
+    margin-bottom: 4rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+    text-align: center;
+  }
+
+  .experience-timeline {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 3rem;
+  }
+
+  .experience-timeline::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 36px;
+    width: 2px;
+    background-color: rgba(0, 0, 0, 0.1);
+    z-index: 1;
+  }
+
+  .experience-card {
+    position: relative;
+    display: flex;
+    gap: 2rem;
+    background-color: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+    z-index: 2;
+  }
+
+  .experience-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+  }
+
+  .experience-logo-container {
+    position: relative;
+    width: 75px;
+    height: 75px;
+    flex-shrink: 0;
+  }
+
+  .experience-logo-placeholder {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 10px;
+    background-color: #f5f5f5;
+    border: 2px solid var(--card-color, #4f46e5);
+    transition: all 0.3s ease;
+  }
+
+  .experience-logo {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: all 0.3s ease;
+  }
+
+  .experience-logo img {
+    width: 50px;
+    height: 50px;
+    object-fit: contain;
+  }
+
+  .experience-card:hover .experience-logo {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .experience-card:hover .experience-logo-placeholder {
+    background-color: var(--card-color, #4f46e5);
+  }
+
+  .experience-content {
+    flex: 1;
+  }
+
+  .experience-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+  }
+
+  .experience-header h3 {
+    font-size: 1.25rem;
+    margin: 0;
+  }
+
+  .experience-period {
+    font-size: 0.9rem;
+    color: #666;
+  }
+
+  .experience-role {
+    font-weight: 600;
+    color: var(--accent-color);
+    margin-bottom: 1rem;
+  }
+
+  .experience-description {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: #444;
+  }
+
+  @media (max-width: 768px) {
+    .experience-card {
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .experience-timeline::before {
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .experience-logo-container {
+      margin: 0 auto;
+    }
+
+    .experience-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+
+    .sticky-header {
+      top: 1rem;
+      padding: 1.5rem;
+    }
+  }
+</style>
+
+<script>
+  import { gsap } from "gsap";
+  import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+  gsap.registerPlugin(ScrollTrigger);
+
+  // Initialize animations when DOM is ready
+  document.addEventListener("DOMContentLoaded", () => {
+    // Experience section animations
+    const experienceSection = document.querySelector(".experience-section");
+    const experienceCards = document.querySelectorAll(".experience-card");
+
+    if (!experienceSection || !experienceCards.length) return;
+
+    // Set up reveal animation for experience cards
+    gsap.set(experienceCards, { opacity: 0, y: 50 });
+
+    ScrollTrigger.batch(experienceCards, {
+      onEnter: (elements) => {
+        gsap.to(elements, {
+          opacity: 1,
+          y: 0,
+          stagger: 0.15,
+          duration: 0.8,
+          ease: "power3.out",
+        });
+      },
+      start: "top 80%",
+      end: "bottom 20%",
+      once: true,
+    });
+
+    // Add hover effects for logos (using JavaScript to complement CSS)
+    experienceCards.forEach((card) => {
+      const logoContainer = card.querySelector(".experience-logo-container");
+      const logo = card.querySelector(".experience-logo");
+      const placeholder = card.querySelector(".experience-logo-placeholder");
+
+      if (!logoContainer || !logo || !placeholder) return;
+
+      // Enhance hover effect with GSAP
+      card.addEventListener("mouseenter", () => {
+        gsap.to(logo, {
+          opacity: 1,
+          scale: 1,
+          duration: 0.3,
+          ease: "back.out(1.5)",
+        });
+
+        gsap.to(placeholder, {
+          backgroundColor:
+            logoContainer.style.getPropertyValue("--card-color") || "#4f46e5",
+          duration: 0.3,
+        });
+      });
+
+      card.addEventListener("mouseleave", () => {
+        gsap.to(logo, {
+          opacity: 0,
+          scale: 0.8,
+          duration: 0.3,
+        });
+
+        gsap.to(placeholder, {
+          backgroundColor: "#f5f5f5",
+          duration: 0.3,
+        });
+      });
+    });
+  });
+</script>
