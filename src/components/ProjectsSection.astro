@@ -56,66 +56,28 @@ const projects = [
       <p>A selection of my recent work and side projects</p>
     </div>
 
-    <div class="carousel-container">
-      <div class="carousel">
-        {
-          projects.map((project) => (
-            <div class="project-card" data-id={project.id}>
-              <div class="project-image">
-                <img src={project.image} alt={project.title} />
-              </div>
-              <div class="project-content">
-                <h3>{project.title}</h3>
-                <p>{project.description}</p>
-                <div class="project-tags">
-                  {project.tags.map((tag) => (
-                    <span class="tag">{tag}</span>
-                  ))}
-                </div>
-                <a href={project.link} class="btn project-btn">
-                  Learn More
-                </a>
-              </div>
+    <div class="projects-grid">
+      {
+        projects.map((project, index) => (
+          <div class="project-card" data-id={project.id} data-index={index}>
+            <div class="project-image">
+              <img src={project.image} alt={project.title} />
             </div>
-          ))
-        }
-      </div>
-
-      <div class="carousel-controls">
-        <button class="prev-btn" aria-label="Previous">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg
-          >
-        </button>
-        <div class="carousel-dots">
-          {
-            projects.map((project) => (
-              <button
-                class="dot"
-                data-id={project.id}
-                aria-label={`Go to project ${project.id}`}
-              />
-            ))
-          }
-        </div>
-        <button class="next-btn" aria-label="Next">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg
-          >
-        </button>
-      </div>
+            <div class="project-content">
+              <h3>{project.title}</h3>
+              <p>{project.description}</p>
+              <div class="project-tags">
+                {project.tags.map((tag) => (
+                  <span class="tag">{tag}</span>
+                ))}
+              </div>
+              <a href={project.link} class="btn project-btn">
+                Learn More
+              </a>
+            </div>
+          </div>
+        ))
+      }
     </div>
   </div>
 </section>
@@ -156,60 +118,62 @@ const projects = [
     background-color: var(--accent-color);
   }
 
-  .carousel-container {
-    position: relative;
-    max-width: 90%;
-    margin: 0 auto;
-    perspective: 1000px;
-  }
-
-  .carousel {
-    position: relative;
-    height: 450px;
-    transform-style: preserve-3d;
-    margin-bottom: 3rem;
-  }
-
-  .project-card {
-    position: absolute;
-    top: 0;
-    left: 0;
+  /* Magazine-style grid layout */
+  .projects-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
     width: 100%;
-    max-width: 350px;
-    height: 450px;
-    border-radius: 10px;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+  }
+
+  /* Create organized but still visually interesting cards */
+  .project-card {
+    position: relative;
+    border-radius: 8px;
     background-color: white;
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
     overflow: hidden;
-    transform-style: preserve-3d;
-    transition: all 0.5s ease;
+    transition: all 0.4s ease;
     opacity: 0;
-    visibility: hidden;
-    transform: translateZ(-400px) translateX(-200px) rotateY(-45deg);
+    transform: translateY(20px);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
   }
 
-  .project-card.active {
-    opacity: 1;
-    visibility: visible;
-    transform: translateZ(0) translateX(0) rotateY(0);
-    z-index: 10;
+  /* First row layout */
+  .project-card[data-index="0"] {
+    grid-column: span 2;
+    grid-row: span 1;
   }
 
-  .project-card.prev,
-  .project-card.next {
-    opacity: 0.7;
-    visibility: visible;
-    pointer-events: none;
+  .project-card[data-index="1"] {
+    grid-column: span 2;
+    grid-row: span 1;
   }
 
-  .project-card.prev {
-    transform: translateZ(-150px) translateX(-150px) rotateY(-30deg);
-    z-index: 5;
+  /* Second row layout */
+  .project-card[data-index="2"] {
+    grid-column: span 1;
+    grid-row: span 1;
   }
 
-  .project-card.next {
-    transform: translateZ(-150px) translateX(150px) rotateY(30deg);
-    z-index: 5;
+  .project-card[data-index="3"] {
+    grid-column: span 2;
+    grid-row: span 1;
+  }
+
+  .project-card[data-index="4"] {
+    grid-column: span 1;
+    grid-row: span 1;
+  }
+
+  .project-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
   }
 
   .project-image {
@@ -217,15 +181,17 @@ const projects = [
     overflow: hidden;
   }
 
+  /* Featured projects get slightly larger images */
+  .project-card[data-index="0"] .project-image,
+  .project-card[data-index="3"] .project-image {
+    height: 240px;
+  }
+
   .project-image img {
     width: 100%;
     height: 100%;
     object-fit: cover;
     transition: transform 0.5s ease;
-  }
-
-  .project-card:hover .project-image img {
-    transform: scale(1.05);
   }
 
   .project-content {
@@ -263,208 +229,58 @@ const projects = [
     padding: 0.5rem 1rem;
   }
 
-  .carousel-controls {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 1.5rem;
-  }
-
-  .prev-btn,
-  .next-btn {
-    background: none;
-    border: none;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: white;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    cursor: pointer;
-    transition: all 0.3s ease;
-  }
-
-  .prev-btn:hover,
-  .next-btn:hover {
-    background-color: var(--accent-color);
-    color: white;
-    transform: translateY(-2px);
-  }
-
-  .prev-btn svg,
-  .next-btn svg {
-    width: 20px;
-    height: 20px;
-  }
-
-  .carousel-dots {
-    display: flex;
-    gap: 0.5rem;
-  }
-
-  .dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background-color: #ccc;
-    border: none;
-    padding: 0;
-    cursor: pointer;
-    transition: all 0.3s ease;
-  }
-
-  .dot.active {
-    background-color: var(--accent-color);
-    transform: scale(1.2);
-  }
-
-  @media (max-width: 768px) {
-    .carousel {
-      height: 400px;
+  /* Responsive adjustments */
+  @media (max-width: 992px) {
+    .projects-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.5rem;
     }
 
-    .project-card {
-      height: 400px;
-      max-width: 300px;
+    .project-card[data-index="0"],
+    .project-card[data-index="1"],
+    .project-card[data-index="2"],
+    .project-card[data-index="3"],
+    .project-card[data-index="4"] {
+      grid-column: span 1;
+      grid-row: span 1;
+    }
+  }
+
+  @media (max-width: 576px) {
+    .projects-grid {
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
     }
 
     .project-image {
-      height: 160px;
+      height: 200px;
     }
   }
 </style>
 
 <script>
   import { gsap } from "gsap";
+  import { ScrollTrigger } from "gsap/ScrollTrigger";
 
-  class ProjectCarousel {
-    constructor() {
-      this.carousel = document.querySelector(".carousel");
-      this.cards = Array.from(document.querySelectorAll(".project-card"));
-      this.prevBtn = document.querySelector(".prev-btn");
-      this.nextBtn = document.querySelector(".next-btn");
-      this.dots = Array.from(document.querySelectorAll(".dot"));
+  gsap.registerPlugin(ScrollTrigger);
 
-      this.totalCards = this.cards.length;
-      this.currentIndex = 0;
-
-      this.init();
-    }
-
-    init() {
-      // Set initial state
-      this.updateCarousel();
-
-      // Add event listeners
-      this.prevBtn?.addEventListener("click", () => this.goToPrev());
-      this.nextBtn?.addEventListener("click", () => this.goToNext());
-
-      this.dots.forEach((dot, index) => {
-        dot.addEventListener("click", () => this.goToIndex(index));
-      });
-
-      // Add auto-rotation
-      this.autoRotateInterval = setInterval(() => this.goToNext(), 5000);
-
-      // Pause rotation on hover
-      this.carousel?.addEventListener("mouseenter", () => {
-        clearInterval(this.autoRotateInterval);
-      });
-
-      this.carousel?.addEventListener("mouseleave", () => {
-        this.autoRotateInterval = setInterval(() => this.goToNext(), 5000);
-      });
-
-      // Add touch/swipe support
-      this.setupSwipeSupport();
-    }
-
-    updateCarousel() {
-      this.cards.forEach((card, index) => {
-        const prevIndex =
-          (this.currentIndex - 1 + this.totalCards) % this.totalCards;
-        const nextIndex = (this.currentIndex + 1) % this.totalCards;
-
-        // Remove all classes
-        card.classList.remove("active", "prev", "next");
-
-        if (index === this.currentIndex) {
-          card.classList.add("active");
-        } else if (index === prevIndex) {
-          card.classList.add("prev");
-        } else if (index === nextIndex) {
-          card.classList.add("next");
-        }
-      });
-
-      // Update dots
-      this.dots.forEach((dot, index) => {
-        if (index === this.currentIndex) {
-          dot.classList.add("active");
-        } else {
-          dot.classList.remove("active");
-        }
-      });
-    }
-
-    goToPrev() {
-      this.currentIndex =
-        (this.currentIndex - 1 + this.totalCards) % this.totalCards;
-      this.updateCarousel();
-    }
-
-    goToNext() {
-      this.currentIndex = (this.currentIndex + 1) % this.totalCards;
-      this.updateCarousel();
-    }
-
-    goToIndex(index) {
-      this.currentIndex = index;
-      this.updateCarousel();
-    }
-
-    setupSwipeSupport() {
-      if (!this.carousel) return;
-
-      let touchStartX = 0;
-      let touchEndX = 0;
-
-      this.carousel.addEventListener(
-        "touchstart",
-        (e) => {
-          touchStartX = e.changedTouches[0].screenX;
-        },
-        { passive: true }
-      );
-
-      this.carousel.addEventListener(
-        "touchend",
-        (e) => {
-          touchEndX = e.changedTouches[0].screenX;
-          this.handleSwipe(touchStartX, touchEndX);
-        },
-        { passive: true }
-      );
-    }
-
-    handleSwipe(startX, endX) {
-      const difference = startX - endX;
-      const threshold = 50;
-
-      if (difference > threshold) {
-        // Swipe left, go to next
-        this.goToNext();
-      } else if (difference < -threshold) {
-        // Swipe right, go to prev
-        this.goToPrev();
-      }
-    }
-  }
-
-  // Initialize carousel when DOM is ready
   document.addEventListener("DOMContentLoaded", () => {
-    new ProjectCarousel();
+    // Animate projects in a staggered fashion when scrolled into view
+    const projectCards = document.querySelectorAll(".project-card");
+
+    ScrollTrigger.batch(projectCards, {
+      interval: 0.1, // time between batches
+      batchMax: 3, // maximum batch size
+      onEnter: (batch) => {
+        gsap.to(batch, {
+          opacity: 1,
+          y: 0,
+          stagger: 0.15,
+          duration: 0.8,
+          ease: "power4.out",
+        });
+      },
+      start: "top 85%",
+    });
   });
 </script>

@@ -349,47 +349,39 @@
       let emittedCount = 0;
       const maxEmitPerFrame = 10; // Increased from 5 (implied by i > 15)
 
+      // Create size attribute if it doesn't exist
+      if (!this.sparkGeometry.attributes.size) {
+        const sizeAttr = new Float32Array(this.sparkPositions.length / 3);
+        for (let j = 0; j < sizeAttr.length; j++) {
+          sizeAttr[j] = this.sparkMaterial.size as number;
+        }
+        this.sparkGeometry.setAttribute(
+          "size",
+          new THREE.BufferAttribute(sizeAttr, 1)
+        );
+      }
+
+      const sizeAttr = this.sparkGeometry.attributes
+        .size as THREE.BufferAttribute;
+
+      // First try to find inactive particles to reuse
       for (let i = 0; i < this.sparkPositions.length; i += 3) {
-        if (this.sparkLifetimes[i / 3] <= 0) {
-          // Position at cursor with slight random offset for more natural look
-          const offset = Math.random() * 10 - 5;
-          this.sparkPositions[i] = pos.x + offset;
-          this.sparkPositions[i + 1] = pos.y + offset;
-          this.sparkPositions[i + 2] = pos.z;
-
-          // Random velocity with more dramatic variation
-          const angle = Math.random() * Math.PI * 2;
-          const speed = 1 + Math.random() * 5; // Increased maximum speed
-          this.sparkVelocities[i / 3].set(
-            Math.cos(angle) * speed,
-            Math.sin(angle) * speed * 1.5, // More upward bias
-            (Math.random() - 0.5) * 3
-          );
-
-          // Varied lifetimes
-          this.sparkLifetimes[i / 3] = 0.5 + Math.random() * 1.5; // Longer max lifetime
-
-          // Random size variation - modify the material size for some particles
-          if (i % 9 === 0) {
-            // Every 3rd particle is larger for more visual interest
-            const sizes = this.sparkMaterial.size as number;
-            const sizeAttr = new Float32Array(this.sparkPositions.length / 3);
-            for (let j = 0; j < sizeAttr.length; j++) {
-              // Random sizes between 10 and 20
-              sizeAttr[j] = Math.random() * 10 + 10;
-            }
-
-            // If size attribute doesn't exist yet, create it
-            if (!this.sparkGeometry.attributes.size) {
-              this.sparkGeometry.setAttribute(
-                "size",
-                new THREE.BufferAttribute(sizeAttr, 1)
-              );
-            }
-          }
-
+        const index = i / 3;
+        if (this.sparkLifetimes[index] <= 0) {
+          this.createNewSpark(index, pos, sizeAttr);
           emittedCount++;
           if (emittedCount >= maxEmitPerFrame) break;
+        }
+      }
+
+      // If we couldn't find enough inactive particles, force reuse some existing ones
+      if (emittedCount < maxEmitPerFrame) {
+        for (let i = 0; i < maxEmitPerFrame - emittedCount; i++) {
+          // Pick a random particle to reuse
+          const randomIndex = Math.floor(
+            Math.random() * (this.sparkPositions.length / 3)
+          );
+          this.createNewSpark(randomIndex, pos, sizeAttr);
         }
       }
 
@@ -397,6 +389,39 @@
       this.sparkGeometry.attributes.position.needsUpdate = true;
       if (this.sparkGeometry.attributes.size) {
         this.sparkGeometry.attributes.size.needsUpdate = true;
+      }
+    }
+
+    // Helper method to create a new spark at the given index
+    createNewSpark(
+      index: number,
+      pos: THREE.Vector3,
+      sizeAttr: THREE.BufferAttribute
+    ) {
+      const i = index * 3;
+      // Position at cursor with slight random offset for more natural look
+      const offset = Math.random() * 10 - 5;
+      this.sparkPositions[i] = pos.x + offset;
+      this.sparkPositions[i + 1] = pos.y + offset;
+      this.sparkPositions[i + 2] = pos.z;
+
+      // Random velocity with more dramatic variation
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 1 + Math.random() * 5; // Increased maximum speed
+      this.sparkVelocities[index].set(
+        Math.cos(angle) * speed,
+        Math.sin(angle) * speed * 1.5, // More upward bias
+        (Math.random() - 0.5) * 3
+      );
+
+      // Varied lifetimes
+      this.sparkLifetimes[index] = 0.5 + Math.random() * 1.5; // Longer max lifetime
+
+      // Random size variation for some particles
+      if (index % 3 === 0) {
+        sizeAttr.array[index] = Math.random() * 10 + 10;
+      } else {
+        sizeAttr.array[index] = this.sparkMaterial.size as number;
       }
     }
 
@@ -423,9 +448,9 @@
           // Fade out based on lifetime
           const alpha = this.sparkLifetimes[index];
           // Yellow to orange/red transition as particles fade
-          colorAttribute.array[i] = 1.0; // Red stays at maximum
-          colorAttribute.array[i + 1] = 0.84 * alpha; // Green fades out (yellow to orange/red)
-          colorAttribute.array[i + 2] = 0.0; // No blue for yellow/orange/red colors
+          colorAttribute.array[index * 3] = 1.0; // Red stays at maximum
+          colorAttribute.array[index * 3 + 1] = 0.84 * alpha; // Green fades out (yellow to orange/red)
+          colorAttribute.array[index * 3 + 2] = 0.0; // No blue for yellow/orange/red colors
         } else {
           // Hide expired particles
           this.sparkPositions[i + 2] = -1000;
@@ -452,16 +477,35 @@
         // Store current mouse position for spark emission
         this.mousePosition.x = e.clientX;
         this.mousePosition.y = e.clientY;
+
+        // Emit sparks directly on mousemove when hovering
+        if (this.isHovering) {
+          this.emitSparks(e.clientX, e.clientY);
+        }
       });
 
       // Add hover detection
       this.container.addEventListener("mouseenter", () => {
         this.isHovering = true;
+        // Force reset some particles to ensure we have available ones
+        this.resetSomeParticles();
       });
 
       this.container.addEventListener("mouseleave", () => {
         this.isHovering = false;
       });
+    }
+
+    // New method to ensure some particles are always available
+    resetSomeParticles() {
+      // Reset at least 25% of particles to ensure we have enough ready
+      const particleCount = this.sparkPositions.length / 3;
+      const resetCount = Math.floor(particleCount * 0.25);
+
+      for (let i = 0; i < resetCount; i++) {
+        const randomIndex = Math.floor(Math.random() * particleCount);
+        this.sparkLifetimes[randomIndex] = 0;
+      }
     }
 
     onResize() {
@@ -510,8 +554,8 @@
         // Slowly rotate cloth
         this.cloth.rotation.z += 0.001;
 
-        // Handle spark effects
-        this.emitSparks(this.mousePosition.x, this.mousePosition.y);
+        // Update spark effects - we no longer call emitSparks here
+        // since we're now calling it directly from the mousemove event
         this.updateSparks(deltaTime);
 
         this.renderer.render(this.scene, this.camera);

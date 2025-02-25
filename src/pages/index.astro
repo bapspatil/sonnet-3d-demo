@@ -33,10 +33,9 @@ import FooterSection from "../components/FooterSection.astro";
 
   document.addEventListener("DOMContentLoaded", () => {
     const projectsSection = document.querySelector(".projects-section");
-
     if (!projectsSection) return;
 
-    // Simple animation for projects section when scrolled to
+    // Simple fade-in animation for projects section
     ScrollTrigger.create({
       trigger: projectsSection,
       start: "top 80%",
@@ -45,6 +44,16 @@ import FooterSection from "../components/FooterSection.astro";
           opacity: 1,
           y: 0,
           duration: 0.8,
+          ease: "power2.out",
+        });
+
+        // Animate individual project cards
+        const projectCards = projectsSection.querySelectorAll(".project-card");
+        gsap.to(projectCards, {
+          opacity: 1,
+          y: 0,
+          stagger: 0.1,
+          duration: 0.6,
           ease: "power2.out",
         });
       },

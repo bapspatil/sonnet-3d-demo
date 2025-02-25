@@ -309,7 +309,9 @@ const experiences = [
 
         gsap.to(placeholder, {
           backgroundColor:
-            logoContainer.style.getPropertyValue("--card-color") || "#4f46e5",
+            (logoContainer as HTMLElement).style.getPropertyValue(
+              "--card-color"
+            ) || "#4f46e5",
           duration: 0.3,
         });
       });
